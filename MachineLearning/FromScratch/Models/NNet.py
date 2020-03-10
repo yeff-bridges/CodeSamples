@@ -32,6 +32,10 @@ class Base_Layer:
 
 
 class Layer(Base_Layer):
+    """
+    Typical Feed-Forward, Full Connected Layer with Activation and Batch Normalization options.
+    Requires that another Base_Layer object come after, so a separate type of Layer is used for output.
+    """
     def __init__(self, size_in, size_out, activation_func=Sigmoid(), learn_rate=1e-3, batch_norm_p=1):
         super().__init__()
         self.w = {"array": np.random.randn(size_in, size_out) * np.sqrt(1 / (size_in + size_out))}
@@ -85,6 +89,9 @@ class Layer(Base_Layer):
 
 
 class Output_Layer(Layer):
+    """
+    Similar to Layer, but this one doesn't assume it has as Base_Layer after it
+    """
     def Backward(self, z_in, y):
         y_hat = self.Forward(z_in)
         grad_h = y_hat - y
@@ -158,6 +165,9 @@ class Split_Layer(Base_Layer):
 
 
 class Bypass_Layer(Base_Layer):
+    """
+    A layer used to create a Bypass between Base_Layers
+    """
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -198,6 +208,9 @@ class Bypass_Layer(Base_Layer):
 
 
 class Empty_layer(Base_Layer):
+    """
+    A dummy Base_Layer utilized by the Bypass_Layer when connecting ends of the Bypass
+    """
     def __init__(self, grad):
         super().__init__()
         self.grad = grad
@@ -219,6 +232,10 @@ class Empty_layer(Base_Layer):
 
 
 class Dropout_Layer(Base_Layer):
+    """
+    A Base_Layer which randomly zeros a portion of the outputs of the Base_Layer coming before it.
+    The shape of the input is preserved, and the random zeroing is only performed during training
+    """
     def __init__(self, drop_rate=.5):
         super().__init__()
         self.drop_rate = drop_rate
@@ -246,6 +263,10 @@ class Dropout_Layer(Base_Layer):
 
 
 class Noise_Injection_Layer(Base_Layer):
+    """
+    A Base_Layer which adds random noise to the outputs of the Base_Layer fed into it
+    The shape of the inputs is preserved, and the noise is only injected during training
+    """
     def __init__(self, sigma):
         super().__init__()
         self.sigma = sigma
@@ -271,6 +292,10 @@ class Noise_Injection_Layer(Base_Layer):
 
 
 class Batch_Norm_Layer(Base_Layer):
+    """
+    A Base_Layer which normalizes the outputs of the previous Base_Layer based on a moving average of all outputs seen during training.
+    This normalization preserves the input shape, and the moving average is only updated during training
+    """
     def __init__(self, norm_p):
         super().__init__()
         self.mu = 0
