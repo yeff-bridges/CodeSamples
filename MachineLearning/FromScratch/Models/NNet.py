@@ -1,4 +1,4 @@
-from DeeperDream.Activation.Class import *
+from FromScratch.Activation.Class import *
 import numpy as np
 
 class Base_Layer:
