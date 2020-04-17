@@ -1,2 +1,14 @@
 # CodeSamples
-For all of you wondering if I can code
+A repository created to house non-proprietary code samples. 
+
+FromScratch
+The FromScratch repository includes my own recreations of various Tensorflow/PyTorch/Sklearn ML functions using Numpy.
+They're all organized by subject, and each directory contains individual .py files for each algorithm as well
+as a full module containing them all. The modules can all be compiled into the FromScratch module, which can 
+be used out of the box and is loaded for each of the Notebook examples.
+
+NLP
+The NLP repository contains various Notebooks where I tackle various classic problems using Tensorflow or PyTorch.
+Currently, the problems tackled are Image Captioning with the Flickr8k dataset.
+
+More example will be added in the future as I find them from old drives and polish them.
