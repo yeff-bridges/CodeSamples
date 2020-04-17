@@ -208,17 +208,4 @@ class Boosting:
             y_hat += model.Predict(x)
         return y_hat
 
-# if __name__ == '__main__':
-#     x = np.random.rand(1000, 1) * 10 - 5
-#     y = x ** 2 + np.random.rand(1000, 1)*4
-#     x = pd.DataFrame(x)
-#     y = pd.DataFrame(y)
-#
-#     # plt.scatter(x, y)
-#     root_tree = Tree(1, np.var, np.mean, gain_thresh=0.1, num=10)
-#     bagg = BaggedForest(root_tree, rate=0.1, size=100, num_trees=100)
-#
-#     bagg.Fit(x, y)
-#     y_hat = bagg.Predict(x)
-
 
