@@ -1,7 +1,7 @@
-from FromScratch.Activation.Class import *
+from FromScratchModule.Activation.Class import *
 import numpy as np
 
-class Base_Layer:
+class BaseLayer:
     """
     Superclass for all of the layers.
 
@@ -11,14 +11,14 @@ class Base_Layer:
         self.end = self
         self.after = None
 
-    def AddAfter(self, layer):
+    def add_after(self, layer):
         self.end.after = layer
         self.end = layer
         return self
 
     def __rshift__(self, layer):
         """
-        Wrapper for self.AddAfter()
+        Wrapper for self.add_after()
 
         Allows us to use the >> operator for constructing our models.
 
@@ -28,13 +28,13 @@ class Base_Layer:
         :param layer: The next layer in the model; the current layer will feed into this
         :return: self
         """
-        return self.AddAfter(layer)
+        return self.add_after(layer)
 
 
-class Layer(Base_Layer):
+class Layer(BaseLayer):
     """
     Typical Feed-Forward, Full Connected Layer with Activation and Batch Normalization options.
-    Requires that another Base_Layer object come after, so a separate type of Layer is used for output.
+    Requires that another BaseLayer object come after, so a separate type of Layer is used for output.
     """
     def __init__(self, size_in, size_out, activation_func=Sigmoid(), learn_rate=1e-3, batch_norm_p=1):
         super().__init__()
@@ -46,7 +46,7 @@ class Layer(Base_Layer):
         self.mu_h = 0
         self.sig_h = 1
 
-    def Forward(self, z_in):
+    def forward(self, z_in):
         h = z_in @ self.w["array"] + self.b["array"]
         mu_h = np.mean(h, keepdims=True, axis=0)
         self.mu_h = self.mu_h * self.batch_norm_p + mu_h * (1 - self.batch_norm_p)
@@ -54,9 +54,9 @@ class Layer(Base_Layer):
         self.sig_h = self.sig_h * self.batch_norm_p + sig_h * (1 - self.batch_norm_p)
         h_norm = (h - self.mu_h) / self.sig_h
         z_out = self.activation_func(h_norm)
-        return z_out
+        return self.after.forward(z_out) if not self.after == None else z_out
 
-    def Backward(self, z_in, y):
+    def backward(self, z_in, y):
         h = z_in @ self.w["array"] + self.b["array"]
         mu_h = np.mean(h, keepdims=True, axis=0)
         self.mu_h = self.mu_h * self.batch_norm_p + mu_h * (1 - self.batch_norm_p)
@@ -65,8 +65,8 @@ class Layer(Base_Layer):
         h_norm = (h - self.mu_h) / self.sig_h
         z_out = self.activation_func(h_norm)
 
-        grad_after = self.after.Backward(z_out, y)
-        grad_h_norm = grad_after * self.activation_func.D(h_norm)
+        grad_after = self.after.backward(z_out, y)
+        grad_h_norm = grad_after * self.activation_func.grad(h_norm)
         grad_h = grad_h_norm / self.sig_h
 
         grad_w = z_in.T @ grad_h
@@ -78,22 +78,22 @@ class Layer(Base_Layer):
 
         return grad_z_in
 
-    def Predict(self, z_in):
-        return self.after.Predict(self.Forward(z_in))
+    def predict(self, z_in):
+        return self.after.predict(self.forward(z_in))
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
         my_parameters = [self.w, self.b]
         parameters.extend(my_parameters)
         return parameters
 
 
-class Output_Layer(Layer):
+class OutputLayer(Layer):
     """
-    Similar to Layer, but this one doesn't assume it has as Base_Layer after it
+    Similar to Layer, but this one doesn't assume it has as BaseLayer after it
     """
-    def Backward(self, z_in, y):
-        y_hat = self.Forward(z_in)
+    def backward(self, z_in, y):
+        y_hat = self.forward(z_in)
         grad_h = y_hat - y
 
         grad_w = z_in.T @ grad_h
@@ -105,195 +105,195 @@ class Output_Layer(Layer):
 
         return grad_z_in
 
-    def Predict(self, z_in):
-        return self.Forward(z_in)
+    def predict(self, z_in):
+        return self.forward(z_in)
 
-    def GetParameters(self):
+    def get_parameters(self):
         my_parameters = [self.w, self.b]
         return my_parameters
 
 
-class Split_Layer(Base_Layer):
+class SplitLayer(BaseLayer):
     def __init__(self, left, right):
         super().__init__()
         self.left = left
         self.right = right
 
-        self.left.AddAfter(Empty_layer(0))
-        self.right.AddAfter(Empty_layer(0))
+        self.left.add_after(EmptyLayer(0))
+        self.right.add_after(EmptyLayer(0))
 
-    def Forward(self, z_in):
-        z_left = self.left.Forward(z_in)
-        z_right = self.right.Forward(z_in)
+    def forward(self, z_in):
+        z_left = self.left.forward(z_in)
+        z_right = self.right.forward(z_in)
         z_out = np.hstack([z_left, z_right])
         return z_out
 
-    def Backward(self, z_in, y):
-        z_left = self.left.Predict(z_in)
-        z_right = self.right.Predict(z_in)
+    def backward(self, z_in, y):
+        z_left = self.left.predict(z_in)
+        z_right = self.right.predict(z_in)
         z_out = np.hstack([z_left, z_right])
 
-        grad_after = self.after.Backward(z_out, y)
+        grad_after = self.after.backward(z_out, y)
         grad_left = grad_after[:, :z_left.shape[1]]
         grad_right = grad_after[:, z_left.shape[1]:]
 
-        self.left.AddAfter(Empty_layer(grad_left))
-        self.right.AddAfter(Empty_layer(grad_right))
+        self.left.add_after(EmptyLayer(grad_left))
+        self.right.add_after(EmptyLayer(grad_right))
 
-        grad_z_left = self.left.Backward(z_in, y)
-        grad_z_right = self.right.Backward(z_in, y)
+        grad_z_left = self.left.backward(z_in, y)
+        grad_z_right = self.right.backward(z_in, y)
 
         grad_z_in = grad_z_left + grad_z_right
 
         return grad_z_in
 
-    def Predict(self, z_in):
-        z_left = self.left.Predict(z_in)
-        z_right = self.right.Predict(z_in)
+    def predict(self, z_in):
+        z_left = self.left.predict(z_in)
+        z_right = self.right.predict(z_in)
         z_out = np.hstack([z_left, z_right])
-        return self.after.Predict(z_out)
+        return self.after.predict(z_out)
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
 
-        parameters_left = self.left.GetParameters()
-        parameters_right = self.right.GetParameters()
+        parameters_left = self.left.get_parameters()
+        parameters_right = self.right.get_parameters()
 
         parameters.extend(parameters_left)
         parameters.extend(parameters_right)
         return parameters_left
 
 
-class Bypass_Layer(Base_Layer):
+class BypassLayer(BaseLayer):
     """
     A layer used to create a Bypass between Base_Layers
     """
     def __init__(self, model):
         super().__init__()
         self.model = model
-        self.model.AddAfter(Empty_layer(0))
+        self.model.add_after(EmptyLayer(0))
 
-    def Forward(self, z_in):
-        z_model = self.model.Forward(z_in)
+    def forward(self, z_in):
+        z_model = self.model.forward(z_in)
         z_out = np.hstack([z_in, z_model])
         return z_out
 
-    def Backward(self, z_in, y):
-        z_model = self.model.Predict(z_in)
+    def backward(self, z_in, y):
+        z_model = self.model.predict(z_in)
         z_out = np.hstack([z_in, z_model])
 
-        grad_after = self.after.Backward(z_out, y)
+        grad_after = self.after.backward(z_out, y)
         grad_z_left = grad_after[:, :z_in.shape[1]]
         grad_model = grad_after[:, z_in.shape[1]:]
 
-        self.model.AddAfter(Empty_layer(grad_model))
+        self.model.add_after(EmptyLayer(grad_model))
 
-        grad_z_model = self.model.Backward(z_in, y)
+        grad_z_model = self.model.backward(z_in, y)
 
         grad_z_in = grad_z_left + grad_z_model
 
         return grad_z_in
 
-    def Predict(self, z_in):
-        z_model = self.model.Predict(z_in)
+    def predict(self, z_in):
+        z_model = self.model.predict(z_in)
         z_out = np.hstack([z_in, z_model])
-        return self.after.Predict(z_out)
+        return self.after.predict(z_out)
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
-        parameters_model = self.model.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
+        parameters_model = self.model.get_parameters()
 
         parameters.extend(parameters_model)
         return parameters
 
 
-class Empty_layer(Base_Layer):
+class EmptyLayer(BaseLayer):
     """
-    A dummy Base_Layer utilized by the Bypass_Layer when connecting ends of the Bypass
+    A dummy BaseLayer utilized by the Bypass_Layer when connecting ends of the Bypass
     """
     def __init__(self, grad):
         super().__init__()
         self.grad = grad
 
-    def Backward(self, *args, **kwargs):
+    def backward(self, *args, **kwargs):
         return self.grad
 
     @staticmethod
-    def Forward(z_in):
+    def forward(z_in):
         return z_in
 
     @staticmethod
-    def Predict(z_in):
+    def predict(z_in):
         return z_in
 
     @staticmethod
-    def GetParameters():
+    def get_parameters():
         return []
 
 
-class Dropout_Layer(Base_Layer):
+class DropoutLayer(BaseLayer):
     """
-    A Base_Layer which randomly zeros a portion of the outputs of the Base_Layer coming before it.
+    A BaseLayer which randomly zeros a portion of the outputs of the BaseLayer coming before it.
     The shape of the input is preserved, and the random zeroing is only performed during training
     """
     def __init__(self, drop_rate=.5):
         super().__init__()
         self.drop_rate = drop_rate
 
-    def Backward(self, z_in, y):
+    def backward(self, z_in, y):
         mask = np.random.rand(np.shape(z_in)[0], np.shape(z_in)[1]) > self.drop_rate
         z_out = mask * z_in
 
-        grad_after = self.after.Backward(z_out, y)
+        grad_after = self.after.backward(z_out, y)
         grad_out = grad_after * mask
 
         return grad_out
 
-    def Forward(self, z_in):
+    def forward(self, z_in):
         mask = np.random.rand(np.shape(z_in)[0], np.shape(z_in)[1]) > self.drop_rate
         z_out = mask * z_in
         return z_out
 
-    def Predict(self, z_in):
-        return self.after.Predict(z_in)
+    def predict(self, z_in):
+        return self.after.predict(z_in)
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
         return parameters
 
 
-class Noise_Injection_Layer(Base_Layer):
+class NoiseInjectionLayer(BaseLayer):
     """
-    A Base_Layer which adds random noise to the outputs of the Base_Layer fed into it
+    A BaseLayer which adds random noise to the outputs of the BaseLayer fed into it
     The shape of the inputs is preserved, and the noise is only injected during training
     """
     def __init__(self, sigma):
         super().__init__()
         self.sigma = sigma
 
-    def Forward(self, z_in):
+    def forward(self, z_in):
         mu = np.mean(z_in, keepdims=True, axis=0)
         std = np.std(z_in, keepdims=True, axis=0)
         z_out = z_in + (np.random.randn(z_in.shape[0], z_in.shape[1]) * std + mu) * self.sigma
         return z_out
 
-    def Backward(self, z_in, y):
-        z_out = self.Forward(z_in)
+    def backward(self, z_in, y):
+        z_out = self.forward(z_in)
 
-        grad_out = self.after.Backward(z_out, y)
+        grad_out = self.after.backward(z_out, y)
         return grad_out
 
-    def Predict(self, z_in):
-        return self.after.Predict(z_in)
+    def predict(self, z_in):
+        return self.after.predict(z_in)
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
         return parameters
 
 
-class Batch_Norm_Layer(Base_Layer):
+class BatchNormLayer(BaseLayer):
     """
-    A Base_Layer which normalizes the outputs of the previous Base_Layer based on a moving average of all outputs seen during training.
+    A BaseLayer which normalizes the outputs of the previous BaseLayer based on a moving average of all outputs seen during training.
     This normalization preserves the input shape, and the moving average is only updated during training
     """
     def __init__(self, norm_p):
@@ -302,7 +302,7 @@ class Batch_Norm_Layer(Base_Layer):
         self.sig = 1
         self.norm_p = norm_p
 
-    def Forward(self, z_in):
+    def forward(self, z_in):
         mu = np.mean(z_in, keepdims=True, axis=0)
         self.mu = self.norm_p * self.mu + (1 - self.norm_p) * mu
         sig = np.std(z_in, keepdims=True, axis=0)
@@ -311,22 +311,22 @@ class Batch_Norm_Layer(Base_Layer):
         z_out = (z_in - self.mu) / (self.sig + 1e-99)
         return z_out
 
-    def Backward(self, z_in, y):
-        z_out = self.Forward(z_in)
+    def backward(self, z_in, y):
+        z_out = self.forward(z_in)
 
-        grad_after = self.after.Backward(z_out, y)
+        grad_after = self.after.backward(z_out, y)
         grad_out = grad_after / self.sig
         return grad_out
 
-    def Predict(self, z_in):
+    def predict(self, z_in):
         mu = np.mean(z_in, keepdims=True, axis=0)
         mu = self.norm_p * self.mu + (1 - self.norm_p) * mu
         sig = np.std(z_in, keepdims=True, axis=0)
         sig = self.norm_p * self.sig + (1 - self.norm_p) * sig
 
         z_out = (z_in - mu) / (sig + 1e-99)
-        return self.after.Predict(z_out)
+        return self.after.predict(z_out)
 
-    def GetParameters(self):
-        parameters = self.after.GetParameters()
+    def get_parameters(self):
+        parameters = self.after.get_parameters()
         return parameters

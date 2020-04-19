@@ -5,7 +5,7 @@ Used to make toy data sets
 import numpy as np
 
 
-def Donut(n, r, margin):
+def donut(n, r, margin):
     x = np.random.randn(n, 2)
     x_donut = x[np.sqrt(np.sum(x ** 2, axis=1)) > 1] * (r + margin / 2)
     x_hole = x[np.sqrt(np.sum(x ** 2, axis=1)) <= 1] * (r - margin / 2)
@@ -18,7 +18,7 @@ def Donut(n, r, margin):
     return x, y
 
 
-def Clusters(n, cats, dims, spread):
+def clusters(n, cats, dims, spread):
     x = []
     y = []
     for i in range(cats):
@@ -29,7 +29,7 @@ def Clusters(n, cats, dims, spread):
     return x, y
 
 
-def CovClusters(n, cats, dims, spread):
+def cov_clusters(n, cats, dims, spread):
     x = []
     y = []
     for i in range(cats):

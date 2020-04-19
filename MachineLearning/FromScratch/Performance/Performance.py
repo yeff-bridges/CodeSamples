@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-def TruePositive(y, y_hat):
+def true_positive(y, y_hat):
     '''
     :param y: y-values that were used to train model
     :param y_hat: y-values predicted by the model
@@ -9,7 +9,7 @@ def TruePositive(y, y_hat):
     '''
     return np.sum(y & y_hat)
 
-def FalsePositive(y, y_hat):
+def false_positive(y, y_hat):
     '''
     :param y: y-values that were used to train model
     :param y_hat: y-values predicted by the model
@@ -17,7 +17,7 @@ def FalsePositive(y, y_hat):
     '''
     return np.sum(~y & y_hat) #(~) is the bitwise Not operator
 
-def TrueNegative(y, y_hat):
+def true_negative(y, y_hat):
     '''
     :param y: y-values that were used to train model
     :param y_hat: y-values predicted by the model
@@ -25,7 +25,7 @@ def TrueNegative(y, y_hat):
     '''
     return np.sum(~y & ~y_hat)
 
-def FalseNegative(y, y_hat):
+def false_negative(y, y_hat):
     '''
     :param y: y-values that were used to train model
     :param y_hat: y-values predicted by the model
@@ -33,7 +33,7 @@ def FalseNegative(y, y_hat):
     '''
     return np.sum(y & ~y_hat)
 
-def Accuracy(y, p_hat, t=0.5):
+def accuracy(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -46,7 +46,7 @@ def Accuracy(y, p_hat, t=0.5):
     tn = TrueNegative(y, y_hat)
     return (tp + tn) / y.shape[0]
 
-def Precision(y, p_hat, t=0.5):
+def precision(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -60,7 +60,7 @@ def Precision(y, p_hat, t=0.5):
     fp = FalsePositive(y, y_hat)
     return tp / (tp + fp)
 
-def Recall(y, p_hat, t=0.5):
+def recall(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -74,7 +74,7 @@ def Recall(y, p_hat, t=0.5):
     fn = FalseNegative(y, y_hat)
     return tp / (tp + fn)
 
-def F1(y, p_hat, t=0.5):
+def f1(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -90,7 +90,7 @@ def F1(y, p_hat, t=0.5):
     else:
         return f1
 
-def TPR(y, p_hat, t=0.5):
+def tpr(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -103,7 +103,7 @@ def TPR(y, p_hat, t=0.5):
     fn = FalseNegative(y, y_hat)
     return tp / (tp + fn)
 
-def FPR(y, p_hat, t=0.5):
+def fpr(y, p_hat, t=0.5):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -117,7 +117,7 @@ def FPR(y, p_hat, t=0.5):
     #     print(fp)
     return fp / (fp + tn)
 
-def ROC(y, p_hat, num = 1000):
+def roc(y, p_hat, num = 1000):
     '''
     :param y: y values used to train model
     :param p_hat: probabilities
@@ -164,7 +164,7 @@ def ROC(y, p_hat, num = 1000):
     return AUC
 
 
-def R2(y, y_hat):
+def r2(y, y_hat):
     '''
     :param y: y-values that were used to train model
     :param y_hat: y-values predicted by the model

@@ -4,7 +4,7 @@
 import numpy as np
 
 
-def Sigmoid(z):
+def sigmoid(z):
     """
     Computes the sigmoid for z
 
@@ -14,7 +14,7 @@ def Sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 
-def SoftMax(z):
+def softmax(z):
     """
     Computes the softemax for z
 

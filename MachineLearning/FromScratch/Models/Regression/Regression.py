@@ -1,10 +1,11 @@
 from matplotlib import pyplot as plt
+import numpy as np
 
 from FromScratchModule.Activation.Function import *
-from FromScratchModule.Loss import *
+from FromScratchModule.Loss import mean_squared_error, binary_cross_entropy, cross_entropy
 
 
-class Linear_Regression:
+class LinearRegression:
     def __init__(self, num_iter=1000, tol=1e-4, learning_rate=1e-4, alpha=0, beta=0.5):
         self.num_iter = num_iter
         self.tolerance = tol
@@ -13,7 +14,7 @@ class Linear_Regression:
         self.alpha = alpha
         self.beta = beta
 
-    def Fit(self, x, y, pad=False, plot_loss=False):
+    def fit(self, x, y, pad=False, plot_loss=False):
         """
         This method get x and y nd arrays and apply the gradient descent method.
         :param plot_loss:
@@ -44,7 +45,7 @@ class Linear_Regression:
             plt.plot(loss)
         return self.w
 
-    def BatchFit(self, x, y, pad=False):
+    def batch_fit(self, x, y, pad=False):
         """
         This method get x and y nd arrays and apply the batch gradient descent method.
         Doesn't initialize the weights every time so we can feed it different data points.
@@ -61,24 +62,24 @@ class Linear_Regression:
         if self.w is None:  # Checks to see if we already have weights
             self.w = np.random.randn(x.shape[1], y.shape[1])
 
-        y_hat = self.Predict(x)
+        y_hat = self.predict(x)
         grad = -x.T @ (y - y_hat) + self.alpha * (
                 self.beta * np.sign(self.w) +  # L1
                 (1 - self.beta) * self.w  # L2
         )
 
         self.w -= self.learning_rate * grad
-        loss = MSE(y, y_hat)
+        loss = mean_square_error(y, y_hat)
         return loss
 
-    def Predict(self, x, pad=False):
+    def predict(self, x, pad=False):
         if pad:
             x = np.hstack([np.ones((x.shape[0], 1)), x])
         y_hat = x @ self.w
         return y_hat
 
 
-class Binary_Logistic_Regression:
+class BinaryLogisticRegression:
     def __init__(self, num_iter=1000, tol=1e-4, learning_rate=1e-4, alpha=0, beta=0.5):
         self.num_iter = num_iter
         self.tolerance = tol
@@ -87,7 +88,7 @@ class Binary_Logistic_Regression:
         self.alpha = alpha
         self.beta = beta
 
-    def Fit(self, x, y, pad=False, plot_loss=False):
+    def fit(self, x, y, pad=False, plot_loss=False):
         """
         This method get x and y nd arrays and apply the gradient descent method.
         :param x: nd array
@@ -103,8 +104,8 @@ class Binary_Logistic_Regression:
         self.w = np.random.randn(x.shape[1], y.shape[1])
 
         for i in range(self.num_iter):
-            p_hat = self.Predict(x, pad=False)
-            loss.append(BinaryCrossEntropy(y, p_hat))
+            p_hat = self.predict(x, pad=False)
+            loss.append(binary_cross_entropy(y, p_hat))
             grad = -x.T @ (y - p_hat) + \
                    self.alpha * (
                            self.beta * np.sign(self.w) +  # L1
@@ -117,15 +118,15 @@ class Binary_Logistic_Regression:
             plt.plot(loss)
         return self.w
 
-    def Predict(self, x, pad=False):
+    def predict(self, x, pad=False):
         if pad:
             x = np.hstack([np.ones((x.shape[0], 1)), x])
         y_hat = x @ self.w
-        p_hat = Sigmoid(y_hat)
+        p_hat = sigmoid(y_hat)
         return p_hat
 
 
-class Logistic_Regression:
+class LogisticRegression:
     def __init__(self, num_iter=1000, tol=1e-4, learning_rate=1e-4, alpha=0, beta=0.5):
         self.num_iter = num_iter
         self.tolerance = tol
@@ -134,7 +135,7 @@ class Logistic_Regression:
         self.alpha = alpha
         self.beta = beta
 
-    def Fit(self, x, y, pad=False, plot_loss=False):
+    def fit(self, x, y, pad=False, plot_loss=False):
         """
         This method get x and y nd arrays and apply the gradient descent method.
         :param plot_loss:
@@ -151,8 +152,8 @@ class Logistic_Regression:
         self.w = np.random.randn(x.shape[1], y.shape[1])
 
         for i in range(self.num_iter):
-            p_hat = self.Predict(x, pad=False)
-            loss.append(CrossEntropy(y, p_hat))
+            p_hat = self.predict(x, pad=False)
+            loss.append(cross_entropy(y, p_hat))
             grad = x.T @ (p_hat - y) + \
                    self.alpha * (
                            self.beta * np.sign(self.w) +  # L1
@@ -165,7 +166,7 @@ class Logistic_Regression:
             plt.plot(loss)
         return self.w
 
-    def BatchFit(self, x, y, pad=False):
+    def batch_fit(self, x, y, pad=False):
         """
         This method get x and y nd arrays and apply the gradient descent method.
         Doesn't initialize the weights every time so we can feed it different data points.
@@ -181,18 +182,18 @@ class Logistic_Regression:
         if self.w is None:  # Checks to see if we already have weights
             self.w = np.random.randn(x.shape[1], y.shape[1])
 
-        p_hat = self.Predict(x, pad=False)
+        p_hat = self.predict(x, pad=False)
         grad = x.T @ (p_hat - y) + self.alpha * (
             self.beta * np.sign(self.w) +  # L1
             (1 - self.beta) * self.w  # L2
         )
         self.w -= self.learning_rate * grad
-        loss = CrossEntropy(y, p_hat)
+        loss = cross_entropy(y, p_hat)
         return loss
 
-    def Predict(self, x, pad=False):
+    def predict(self, x, pad=False):
         if pad:
             x = np.hstack([np.ones((x.shape[0], 1)), x])
         y_hat = x @ self.w
-        p_hat = SoftMax(y_hat)
+        p_hat = softmax(y_hat)
         return p_hat

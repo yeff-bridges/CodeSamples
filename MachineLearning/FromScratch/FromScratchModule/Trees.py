@@ -3,10 +3,10 @@ import copy
 
 import pandas as pd
 import numpy as np
-from scipy.stats import mode
+from scipy.stats import mode as s_mode
 
 
-def Bootstrap(df_x, df_y, rate=0.5, size=None):
+def bootstrap(df_x, df_y, rate=0.5, size=None):
     if size is None:
         size = df_x.shape[0]
     df_ind = np.random.choice(df_x.shape[0], int(df_x.shape[0] * rate), replace=False)
@@ -14,13 +14,13 @@ def Bootstrap(df_x, df_y, rate=0.5, size=None):
     return df_x.loc[df_sample_ind], df_y.loc[df_sample_ind]
 
 
-def Gini(y):
+def gini(y):
     labels, freq = np.unique(y, return_counts=True)
     t = freq / np.sum(freq)
     return np.sum(t*(1-t))
 
 
-def InfoGain(y, mask, imp_func):
+def info_gain(y, mask, imp_func):
     gini = imp_func(y[y.columns[0]])
     imps = []
     unique, counts = np.unique(mask, return_counts=True)
@@ -30,8 +30,8 @@ def InfoGain(y, mask, imp_func):
     return gain
 
 
-def Mode(z, axis=None):
-    out = mode(z, axis=axis)
+def mode(z, axis=None):
+    out = s_mode(z, axis=axis)
     return out[0]
 
 
@@ -45,7 +45,7 @@ class Tree:
         self.gain_thresh = gain_thresh
         self.max_points = max_points
 
-    def Fit(self, x, y):
+    def fit(self, x, y):
         if self.height > 0 and x.shape[0] > self.min_points:
             if self.max_points is None:
                 self.max_points = x.shape[0]
@@ -54,7 +54,7 @@ class Tree:
             for feat in x.columns:
                 if x[feat].dtype == 'O':
                     mask = x[feat]
-                    gain = InfoGain(y, mask, self.imp_func)
+                    gain = info_gain(y, mask, self.imp_func)
                     if gain > self.gain:
                         self.gain = gain
                         self.feat = feat
@@ -63,7 +63,7 @@ class Tree:
                     thresholds = np.linspace(x[feat].min(), x[feat].max(), num=self.num)
                     for i, t in enumerate(thresholds):
                         mask = x[feat] > t
-                        gain = InfoGain(y, mask, self.imp_func)
+                        gain = info_gain(y, mask, self.imp_func)
                         if gain > self.gain:
                             self.gain = gain
                             self.t = t
@@ -89,7 +89,7 @@ class Tree:
                     gain_thresh=self.gain_thresh,
                     max_points=self.max_points
                 ))
-                self.children[-1].Fit(
+                self.children[-1].fit(
                     x=x[best_mask == i],
                     y=y[best_mask == i],
                 )
@@ -98,7 +98,7 @@ class Tree:
             self.leaf = True
             self.val = self.agg_func(y[y.columns[0]])
 
-    def Predict(self, x):
+    def predict(self, x):
         out = np.ones((x.shape[0], 1))
         if self.leaf:
             return out * self.val
@@ -109,18 +109,18 @@ class Tree:
                 mask = x[self.feat]
 
             for i, c in enumerate(self.cats):
-                out[c == mask] = self.children[i].Predict(x[c == mask])
+                out[c == mask] = self.children[i].predict(x[c == mask])
 
             return out
 
-    def GetSplits(self):
+    def get_splits(self):
         if self.leaf:
             return []
         else:
             splits = []
             child_splits = []
             for child in self.children:
-                child_splits.append(child.GetSplits())
+                child_splits.append(child.get_splits())
 
             for i in zip_longest(*child_splits, fillvalue=[]):
                 splits.append(sum(i, []))
@@ -140,17 +140,17 @@ class BaggedForest:
         self.rate = rate
         self.size = size
 
-    def Fit(self, x, y):
+    def fit(self, x, y):
         self.trees = []
         for i in range(self.num_trees):
-            x_sample, y_sample = Bootstrap(x, y, self.rate, self.size)
+            x_sample, y_sample = bootstrap(x, y, self.rate, self.size)
             self.trees.append(copy.copy(self.root_tree))
-            self.trees[-1].Fit(x_sample, y_sample)
+            self.trees[-1].fit(x_sample, y_sample)
 
-    def Predict(self, x):
+    def predict(self, x):
         preds = []
         for t in self.trees:
-            preds.append(t.Predict(x))
+            preds.append(t.predict(x))
 
         preds = np.hstack(preds)
         return self.root_tree.agg_func(preds, axis=1)
@@ -164,7 +164,7 @@ class Random_Forest:
         self.size = size
         self.feat_prop = feat_prop
 
-    def Fit(self, x, y):
+    def fit(self, x, y):
         if self.feat_prop is None:
             feats = int(np.round(np.sqrt(x.shape[1]) + 6e-17))
         else:
@@ -172,15 +172,15 @@ class Random_Forest:
         self.trees = []
 
         for i in range(self.num_trees):
-            x_sample, y_sample = Bootstrap(x, y, self.bagg_rate, self.size)
+            x_sample, y_sample = bootstrap(x, y, self.bagg_rate, self.size)
             x_sample = x_sample[np.random.choice(x.columns, size=feats, replace=False)]
             self.trees.append(copy.copy(self.root_tree))
-            self.trees[-1].Fit(x_sample, y_sample)
+            self.trees[-1].fit(x_sample, y_sample)
 
-    def Predict(self, x):
+    def predict(self, x):
         preds = []
         for t in self.trees:
-            preds.append(t.Predict(x))
+            preds.append(t.predict(x))
 
         preds = np.hstack(preds)
         return self.root_tree.agg_func(preds, axis=1)
@@ -193,32 +193,19 @@ class Boosting:
         for i in range(self.num):
             self.models.append(copy.copy(model))
 
-    def Fit(self, x, y):
+    def fit(self, x, y):
         resid = y
         y_hat = 0
         for model in self.models:
-            model.Fit(x, resid - y_hat)
-            y_hat = model.Predict(x)
+            model.fit(x, resid - y_hat)
+            y_hat = model.predict(x)
             resid = resid - y_hat
         return resid
 
-    def Predict(self, x):
+    def predict(self, x):
         y_hat = 0
         for model in self.models:
-            y_hat += model.Predict(x)
+            y_hat += model.predict(x)
         return y_hat
-
-# if __name__ == '__main__':
-#     x = np.random.rand(1000, 1) * 10 - 5
-#     y = x ** 2 + np.random.rand(1000, 1)*4
-#     x = pd.DataFrame(x)
-#     y = pd.DataFrame(y)
-#
-#     # plt.scatter(x, y)
-#     root_tree = Tree(1, np.var, np.mean, gain_thresh=0.1, num=10)
-#     bagg = BaggedForest(root_tree, rate=0.1, size=100, num_trees=100)
-#
-#     bagg.Fit(x, y)
-#     y_hat = bagg.Predict(x)
 
 

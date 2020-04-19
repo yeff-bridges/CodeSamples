@@ -6,33 +6,33 @@ class GD:
         self.learn_rate = learn_rate
         self.parameters = parameters
 
-    def UpdateWeights(self):
+    def update_weights(self):
         for parameter in self.parameters:
             parameter['array'] -= parameter['grad'] * self.learn_rate
 
 
-class Exp_Decay:
+class ExpDecay:
     def __init__(self, parameters, learn_rate=1e-3, k=0.01):
         self.learn_rate = learn_rate
         self.k = k
         self.t = 0
         self.parameters = parameters
 
-    def UpdateWeights(self):
+    def update_weights(self):
         learn_rate = self.learn_rate * np.exp(-self.k * self.t)
         for parameter in self.parameters:
             parameter['array'] -= parameter['grad'] * learn_rate
         self.t += 1
 
 
-class Inverse_Decay:
+class InverseDecay:
     def __init__(self, parameters, learn_rate=1e-3, k=0.01):
         self.learn_rate = learn_rate
         self.t = 0
         self.parameters = parameters
         self.k = k
 
-    def UpdateWeights(self):
+    def update_weights(self):
         learn_rate = self.learn_rate / (1 + self.k * self.t)
         for parameter in self.parameters:
             parameter["array"] -= parameter["grad"] * learn_rate
@@ -46,7 +46,7 @@ class Momentum:
         self.parameters = parameters
         self.v = [np.zeros(param['array'].shape) for param in self.parameters]
 
-    def UpdateWeights(self):
+    def update_weights(self):
         for i, param in enumerate(self.parameters):
             self.v[i] = self.mu * self.v[i] - self.learn_rate * param['grad']
             param['array'] += self.v[i]
@@ -66,7 +66,7 @@ class AdaGrad:
             array_shape = parameter_dictionary["array"].shape
             self.gs.append(np.zeros(array_shape))
 
-    def UpdateWeights(self):
+    def update_weights(self):
         counter = 0
 
         for parameter in self.parameters:
@@ -77,7 +77,7 @@ class AdaGrad:
             counter += 1
 
 
-class RMS_Prop:
+class RMSProp:
     def __init__(self, parameters, learn_rate=1e-2, k=0.5):
         """
 
@@ -90,7 +90,7 @@ class RMS_Prop:
         self.k = k
         self.g = [np.zeros(param['array'].shape) for param in parameters]
 
-    def UpdateWeights(self):
+    def update_weights(self):
         """
 
         :return:
@@ -110,7 +110,7 @@ class Adam:
         self.v = [np.zeros(param['array'].shape) for param in parameters]
         self.t = 0
 
-    def UpdateWeights(self):
+    def update_weights(self):
         self.t += 1
         for idx, param in enumerate(self.parameters):
             self.m[idx] = self.k_1 * self.m[idx] + (1-self.k_1) * param['grad']

@@ -5,7 +5,7 @@ class Linear:
     def __call__(self, z):
         return z
 
-    def D(self, z):
+    def grad(self, z):
         return 1
 
 
@@ -13,7 +13,7 @@ class Sigmoid:
     def __call__(self, z):
         return 1 / (1 + np.exp(-z))
 
-    def D(self, z):
+    def grad(self, z):
         return self(z) * (1 - self(z))
 
 
@@ -26,7 +26,7 @@ class ReLU:
     def __call__(self, z):
         return z * (z > 0)
 
-    def D(self, z):
+    def grad(self, z):
         return z > 0
 
 
@@ -34,7 +34,7 @@ class Tanh:
     def __call__(self, z):
         return (np.exp(z) - np.exp(-z)) / (np.exp(z) + np.exp(-z))
 
-    def D(self, z):
+    def grad(self, z):
         return 1 - (self(z) ** 2)
 
 
@@ -45,5 +45,5 @@ class LeakyReLU:
     def __call__(self, z):
         return z * (z > 0) + self.leak * z * (z <= 0)
 
-    def D(self, z):
+    def grad(self, z):
         return 1 * (z > 0) + self.leak * (z <= 0)
