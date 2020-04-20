@@ -14,3 +14,8 @@ The NLP repository contains various Notebooks where I tackle various classic pro
 Currently, the problems tackled are Image Captioning with the Flickr8k dataset.
 
 More examples will be added in the future as I find them from old drives and polish them.
+
+Some specific To-Do's:
+ - Add section for Predictive Analytics
+ - Add section for Deployment examples
+ - Add section for various pre-processing, data access, and feature engineering
