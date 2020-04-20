@@ -53,13 +53,11 @@ class Momentum:
 
 
 class AdaGrad:
-    # parameters is a dictionary [{array for w_0's: gradients for w_0's}, {array for w_1's: ...}]
     def __init__(self, parameters, learn_rate=1e-3, k=.9):
         self.k = k
         self.learn_rate = learn_rate
         self.parameters = parameters
 
-        # same dims as parameters["grad"]
         self.gs = []
 
         for parameter_dictionary in parameters:
@@ -71,7 +69,6 @@ class AdaGrad:
 
         for parameter in self.parameters:
             self.gs[counter] = self.gs[counter] * self.k + parameter["grad"] ** 2
-            # print(self.gs[counter])
             parameter["array"] = parameter["array"] - self.learn_rate / (np.sqrt(self.gs[counter]) + 1e-99) * parameter["grad"]
 
             counter += 1
@@ -79,22 +76,12 @@ class AdaGrad:
 
 class RMSProp:
     def __init__(self, parameters, learn_rate=1e-2, k=0.5):
-        """
-
-        :param parameters:
-        :param learn_rate:
-        :param k:
-        """
         self.parameters = parameters
         self.learn_rate = learn_rate
         self.k = k
         self.g = [np.zeros(param['array'].shape) for param in parameters]
 
     def update_weights(self):
-        """
-
-        :return:
-        """
         for idx, param in enumerate(self.parameters):
             self.g[idx] = self.k * self.g[idx] + (1 - self.k) * param['grad']**2
             param['array'] -= param['grad'] * self.learn_rate/np.sqrt(self.g[idx] + 1e-99)
